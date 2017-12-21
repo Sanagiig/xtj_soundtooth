@@ -700,7 +700,8 @@
       //处理result
       var mapData = disposePersonLLResult(result,"map"),
           barData = disposePersonLLResult(result,"bar");
-
+      if(errMsg != 200)
+        return;
       //设置option
       //每次请求省的数据时，刷新地图
       if(dataType == 'p')
@@ -714,8 +715,9 @@
       //用personChartOption_ + dataType 字符串表示客群来源数据
       localStorage["personChartOption_" + dataType] = JSON.stringify(curOption);
       //清除加载本地数据的计时器
-      clearTimeout(localTime)
+
       buildPersonOrgHtml($container);
+      clearTimeout(localTime)
     })
 
     //如果超时则读取本地数据，然后再加载地图
@@ -724,6 +726,7 @@
         curPersonOrigOpt = $.parseJSON(localStorage["personChartOption_" + dataType]);
         console.log("personOrig 读取本地数据 >");
         buildPersonOrgHtml($container);
+        clearTimeout(localTime);
       }
     }
   }
@@ -750,8 +753,18 @@
     //显示cantainer
     //并且加载chart class
     $(document).ready(function(){
-      $('#daterange').daterangepicker(
-        {
+      $('#daterange').daterangepicker({
+        opens: "center",
+        startDate:"2017-12-11",
+        endDate:"2017-12-12",
+        ranges: {
+          '今天': [moment(), moment()],
+          '昨天': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+          '最近一周': [moment().subtract(6, 'days'), moment()],
+          '最近30天': [moment().subtract(29, 'days'), moment()],
+          '本月': [moment().startOf('month'), moment().endOf('month')],
+          '上个月': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+        },
         locale:{
         format: 'YYYY-MM-DD',
         applyLabel: '确认',
@@ -759,9 +772,10 @@
         fromLabel: '从',
         toLabel: '到',
         weekLabel: 'W',
-        customRangeLabel: 'Custom Range',
         daysOfWeek:["日","一","二","三","四","五","六"],
-        monthNames: ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"]}
+        monthNames: ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"],
+        customRangeLabel: '自选时间段'
+      }
       },
       function(start, end, label){
         //选择日期后，触发更改person 图表方法
