@@ -8,51 +8,19 @@
   var oneLineChartLimit = 2,
       //数据获取的数量
       infoLoadedCount = 0,
-      interv = null;
+      interv = null,
+      personChart = null; //客群来源chart实例
 
-  // 散点图
-  var option = {
-    title : {
-      text: "title",
-      subtext: '纯属虚构',
-      x:'center',
-    },
-    tooltip : {
-      trigger: 'item',
-      formatter: "{a} <br/>{b} : {c} ({d}%)"
-    },
-    legend: {
-        // orient: 'vertical',
-        // left: 'left',
-        type: 'scroll',
-        orient: 'vertical',
+  var host = "http://120.79.24.113:9911"
+  var localUrlList = {
+    "box":"boxcharts.json",
+    "app":"boxcharts.json"
+  }
 
-        top: 20,
-        left: 'right',
-        data: [],
-        textStyle:{
-          color:"white",
-        }
-      },
-      series : [
-      {
+    // 热地图
 
-        name: '访问来源',
-        type: 'pie',
-        // radius: ['0%', '50%'],
-        center: ['50%', '60%'],
-        data:[],
-        itemStyle: {
-          emphasis: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          }
-        }
-      }
-      ]
-    };
 
+    //地图选项
     var mapOption  = {
       backgroundColor: '#404a59',
       title: {
@@ -242,11 +210,6 @@
       }
       ]
     };
-    var host = "http://120.79.24.113:9911"
-    var localUrlList = {
-      "box":"boxcharts.json",
-      "app":"boxcharts.json"
-    }
 
     var remoteUrlList = {
       "app":host + "/potr/getapplist/e4:95:6e:4f:e9:95/2017-12-11/2017-12-12",
@@ -255,8 +218,49 @@
     }
 
     var m = "pro";
+  //饼图option 模板
+  var chartOption = {
+    title : {
+      text: "title",
+      subtext: '纯属虚构',
+      x:'center',
+    },
+    tooltip : {
+      trigger: 'item',
+      formatter: "{a} <br/>{b} : {c} ({d}%)"
+    },
+    legend: {
+        // orient: 'vertical',
+        // left: 'left',
+        type: 'scroll',
+        orient: 'vertical',
 
-  //来源option
+        top: 20,
+        left: 'right',
+        data: [],
+        textStyle:{
+          color:"white",
+        }
+      },
+      series : [
+      {
+
+        name: '访问来源',
+        type: 'pie',
+        // radius: ['0%', '50%'],
+        center: ['50%', '60%'],
+        data:[],
+        itemStyle: {
+          emphasis: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        }
+      }
+      ]
+    };
+  //省，市来源option
   var personOrigOption = {
     textStyle:{
       color:"white",
@@ -373,7 +377,6 @@
         //roam: true,
         data: []
     },{
-
         name: '省级',
         z: 2,
         type: 'bar',
@@ -395,12 +398,283 @@
         data: []
     }]
 };
+  //地区，办公区来源option
+  var personHeatOption = {
+    animation:true,
+    textStyle:{
+      color:"white",
+    },
+    title: [{
+        text: '客群统计',
+        left: 'center',
+        textStyle: {
+            color: '#ffd323',
+            fontSize: 16
+        }
+    },{
+        text: '区域' ,
+        right: 120,
+        top: 40,
+        width: 100,
+        textStyle: {
+            color: 'white',
+            fontSize: 16
+        }
+    }],
+    tooltip: {
+        trigger: 'item'
+    },
+    legend: {
+        orient: 'vertical',
+        left: 'left',
+        data: [],
+        selectedMode: 'single',
+        textStyle: {
+                fontWeight: 'normal',
+                color: '#ffd323'
+            },
+    },
+    grid: {
+        right: 40,
+        top: 100,
+        bottom: 40,
+        width: '30%'
+    },
+    xAxis: [{
+        position: 'top',
+        type: 'value',
+        boundaryGap: false,
+        splitLine: {
+            show: false
+        },
+        axisLine: {
+            show: false
+        },
+        axisTick: {
+            show: false
+        },
+    }],
+    yAxis: [{
+        type: 'category',
+        data: [],
+        axisTick: {
+            alignWithLabel: true
+        },
+        textStyle:{
+          color:"#ffd323",
+        },
+        axisLine:{
+                    lineStyle:{
+                        color:'#ffd323',
+                        width:1
+                    }
+                },
+    }],
+    bmap:{
+      center: [],
+      zoom: 1,
+      roam: true,
+      mapStyle:{
+        styleJson: [{
+                    'featureType': 'land', //调整土地颜色
+                    'elementType': 'geometry',
+                    'stylers': {
+                        'color': '#081734'
+                    }
+                }, {
+                    'featureType': 'building', //调整建筑物颜色
+                    'elementType': 'geometry',
+                    'stylers': {
+                        'color': '#04406F',
+
+                    }
+                }, {
+                    'featureType': 'building', //调整建筑物标签是否可视
+                    'elementType': 'labels',
+                    'stylers': {
+                        'visibility': 'off'
+                    }
+                }, {
+                    'featureType': 'highway', //调整高速道路颜色
+                    'elementType': 'geometry',
+                    'stylers': {
+                        'color': '#015B99'
+                    }
+                }, {
+                    'featureType': 'highway', //调整高速名字是否可视
+                    'elementType': 'labels',
+                    'stylers': {
+                        'visibility': 'off'
+                    }
+                }, {
+                    'featureType': 'arterial', //调整一些干道颜色
+                    'elementType': 'geometry',
+                    'stylers': {
+                        'color': '#003051'
+                    }
+                }, {
+                    'featureType': 'arterial',
+                    'elementType': 'labels',
+                    'stylers': {
+                        'visibility': 'off'
+                    }
+                }, {
+                    'featureType': 'green',
+                    'elementType': 'geometry',
+                    'stylers': {
+                        'visibility': 'off'
+                    }
+                }, {
+                    'featureType': 'water',
+                    'elementType': 'geometry',
+                    'stylers': {
+                        'color': '#044161',
+
+                    }
+                }, {
+                    'featureType': 'subway', //调整地铁颜色
+                    'elementType': 'geometry.stroke',
+                    'stylers': {
+                        'color': '#003051'
+                    }
+                }, {
+                    'featureType': 'subway',
+                    'elementType': 'labels',
+                    'stylers': {
+                        'visibility': 'off'
+                    }
+                }, {
+                    'featureType': 'railway',
+                    'elementType': 'geometry',
+                    'stylers': {
+                        'visibility': 'off'
+                    }
+                }, {
+                    'featureType': 'railway',
+                    'elementType': 'labels',
+                    'stylers': {
+                        'visibility': 'off'
+                    }
+                }, {
+                    'featureType': 'all', //调整所有的标签的边缘颜色
+                    'elementType': 'labels.text.stroke',
+                    'stylers': {
+                        'color': '#313131',
+                        visibility:"off"
+                    }
+                }, {
+                    'featureType': 'all', //调整所有标签的填充颜色
+                    'elementType': 'labels.text.fill',
+                    'stylers': {
+                        'color': '#FFFFFF',
+                        visibility:"off"
+                    }
+                }, {
+                    'featureType': 'manmade',
+                    'elementType': 'geometry',
+                    'stylers': {
+                        'visibility': 'off'
+                    }
+                }, {
+                    'featureType': 'manmade',
+                    'elementType': 'labels',
+                    'stylers': {
+                        'visibility': 'off'
+                    }
+                }, {
+                    'featureType': 'local',
+                    'elementType': 'geometry',
+                    'stylers': {
+                        'visibility': 'off'
+                    }
+                }, {
+                    'featureType': 'local',
+                    'elementType': 'labels',
+                    'stylers': {
+                        'visibility': 'off'
+                    }
+                }, {
+                    'featureType': 'subway',
+                    'elementType': 'geometry',
+                    'stylers': {
+                        'lightness': -65
+                    }
+                }, {
+                    'featureType': 'railway',
+                    'elementType': 'all',
+                    'stylers': {
+                        'lightness': -40
+                    }
+                }, {
+                    'featureType': 'boundary',
+                    'elementType': 'geometry',
+                    'stylers': {
+                        'color': '#8b8787',
+                        'weight': '1',
+                        'lightness': -29,
+                    }
+                },{"featureType": "poilabel",
+                    "elementType": "all",
+                    "stylers": {
+                          "color": "#000000ff",
+                          "visibility": "off"
+                    }}]
+      }
+    },
+    visualMap: {
+      show: false,
+      top: 'top',
+      min: 0,
+      max: 10,
+      seriesIndex: 0,
+      calculable: true,
+      inRange: {
+        color: ['lightgreen', 'green','green', 'yellow', 'red']
+      }
+    },
+    series: [
+    {
+      type:'heatmap',
+      coordinateSystem: 'bmap',
+      data: [],
+      pointSize: 3,
+      blurSize: 3
+    },
+    {
+        name: '省级',
+        z: 2,
+        type: 'bar',
+        label: {
+            normal: {
+                show: false,
+            },
+            emphasis: {
+                show: true,
+            }
+        },
+        itemStyle: {
+            emphasis: {
+                color: "orange"
+            }
+        },
+        barMaxWidth : 20,
+        barMinWidth : 5,
+        data: []
+    }
+    ]
+  };
   //当前的personOption
-  var curPersonOrigOpt = $.extend(true,{},personOrigOption);
+  var curPersonOrigOpt = $.extend(true,{},personOrigOption),
+      curPersonHeatOpt = $.extend(true,{},personHeatOption);
+
   //所有图表option
   var allChartsOption = {};
 
-
+  // var personChartOption_p =  $.extend(true,{},personOrigOption),
+  //     personChartOption_c =  $.extend(true,{},personOrigOption),
+  //     personChartOption_a =  $.extend(true,{},personOrigOption),
+  //     personChartOption_o =  $.extend(true,{},personOrigOption),
+  //     personChartOption_f =  $.extend(true,{},personOrigOption);
 
   var all = ["Android操作系统", "人群偏好", "Android分辨率", "职业", "网络", "手机价位", "Android型号", "有无小孩", "收入", "性别", "学历", "品牌", "运营商", "车产", "年龄", "通讯社交", "系统工具", "旅游出行", "生活休闲", "网上购物", "新闻阅读", "影音播放", "办公商务", "摄影图像", "金融理财", "网络游戏", "休闲益智", "other", "考试学习", "扑克棋牌", "手机美化", "健康运动", "辅助工具", "育儿亲子"]
 
@@ -425,27 +699,18 @@
     type = type || "des";
     key = "count"
 
-    if(type == "des"){
-      for(var i=0;i<list.length;i++){
-        for(var j=i;j<list.length;j++)
-          if(list[i][key] < list[j][key]){
-            var tmp = list[i][key];
-            list[i][key] = list[j][key];
-            list[j][key] = tmp;
-          }
-      }
+    for(var i=0;i<list.length;i++){
+      for(var j=i;j<list.length;j++)
+        if(type == "des" && list[i][key] < list[j][key]){
+          var tmp = list[i][key];
+          list[i][key] = list[j][key];
+          list[j][key] = tmp;
+        }else if(type =="asc" && list[i][key] > list[j][key]){
+          var tmp = list[i][key];
+          list[i][key] = list[j][key];
+          list[j][key] = tmp;
+        }
     }
-    else{
-      for(var i=0;i<list.length;i++){
-        for(var j=i;j<list.length;j++)
-          if(list[i][key] > list[j][key]){
-            var tmp = list[i][key];
-            list[i][key] = list[j][key];
-            list[j][key] = tmp;
-          }
-      }
-    }
-
     return list;
   }
 
@@ -508,19 +773,8 @@
   }
 
   //处理人群经纬度信息
-  function disposePersonLLResult(json,type){
-    // var json = eval(json["loc"]),
-    // r = [[
-    //       //经纬度 + 值
-    //       ]];
-
-    // for(var i=0;i<json.length;i++){
-    //   var j = json[i]
-    //   r.push({name:"xx"+ i,value:[parseFloat(j.lng),parseFloat(j.lat),parseInt(j.count * 10000)]})
-    // }
-
-    // console.log(r);
-    // return r;
+  function disposePersonChartsResult(json,type){
+    //bar 与map 图表类型的配置
     var data = {
       map:{"itemStyle":{
             "normal":{
@@ -545,23 +799,50 @@
                     }
                 }
             },
-        }
-    }}
+        },
+      },
+      areabar:{"itemStyle": {
+        "normal": {
+          "color": "white",
+          "label": {
+              "show": false,
+              "textStyle": {
+                  "color": "white",
+                  "fontSize": 12
+              }
+            }
+          },
+      }
+    }
+  }
     var json = eval(json),
         r = [];
-    console.log("cur json --->")
-    for(var i=0;i<json.length;i++){
-      var name = json[i].code;
-      // if(name.indexOf("-") != -1) name = name.split("-")[1]
-      r.push({
-        name:name,
-        value:parseFloat(json[i].count*100),
-        itemStyle:data[type].itemStyle
-      })
+
+    if(type == "bar" || type =="map" || type == "areabar"){
+      for(var i=0;i<json.length;i++){
+        //拆分json
+        //在请求省或者市数据时，code表示名字，在请求住户区，或者办公区时，name表示名字
+        //︿(￣︶￣)︿
+        var name = type=="bar" || type=="map"? json[i].code:json[i].name;
+        r.push({
+          name:name,
+          value:parseFloat(json[i].count*100),
+          itemStyle:data[type].itemStyle
+        })
+      }
+      r = (listSort(r)).slice(0,20).reverse();
     }
-    r = (listSort(r));
-    console.log(r.slice(0,20));
-    return r.slice(0,20).reverse();
+
+    else if (type == "heatmap"){
+      for(var i=0;i<json.length;i++){
+        var lng = json[i].lng,
+            lat = json[i].lat,
+            count = json[i].count;
+        r.push([lng,lat,count*100])
+      }
+    }
+
+    return r;
   }
 
   //请求 圆饼图的json，并将处理结果保存到 allChartsOption
@@ -572,11 +853,12 @@
     $.getJSON(url,function(d){
 
       d = eval(d);
-      var textStyle,title,datas,lineDom,chartDom,myChart,
+      var textStyle,title,datas,lineDom,chartDom,mychart
           success = d.data.success,
           errCode = d.data.errCode,
           errMsg = d.data.errMsg,
-          result = d.data.result;
+          result = d.data.result,
+          curOption;
 
       //count 用于计算图表的个数，判断是否换行
       console.log(`createCircleCharts type[${type}] --->`)
@@ -603,7 +885,7 @@
       //将格式化后的json 作为图表的option
       for(var i=0;i<result.ct.length;i++){
         //需要每次都初始化一份当前配置
-        curOption = $.extend(true,{},option);
+        curOption = $.extend(true,{},chartOption);
 
 
         //chart 数据信息
@@ -640,13 +922,17 @@
     //查找经纬度 chartDom
     var chartDom = $("#person-chart").get(0);
 
+    //清空容器是为了清除热地图
+    $container.html(" ");
+    console.log($container)
     opt = opt || curPersonOrigOpt;
+
     if(chartDom.length == 0) chartDom = $("<div id='personLL' style='width:100%;height:100%;'></div>").get(0);
     chartDom.innerHtml = "";
     $container.append(chartDom);
 
-    var myChart = echarts.init(chartDom);
-    myChart.setOption(opt);
+    if(!personChart) personChart = echarts.init(chartDom);
+    personChart.setOption(opt,true);
     //关闭加载动画
     $(".inner-animate-box").fadeOut(300);
 
@@ -678,7 +964,7 @@
   }
 
   //获取person orig 的数据
-  function createLLChart($container,url,dataType){
+  function createPersonChart($container,url,dataType){
     var localTime = setTimeout(loadLocal,6000)
       $container = $($container);
       //加载动画显示
@@ -690,42 +976,57 @@
         errCode = d.data.errCode,
         errMsg = d.data.errMsg,
         result = d.data.result,
-        curOption = curPersonOrigOpt;  //以curopt 为基准的目的是为了确认是否有对地图进行渲染操作
+        curOption,mapData,barData;
 
-      console.log("createLLChart --->");
+
+      console.log("createPersonChart --->");
       console.log(errCode);
       console.log(success);
       console.log(errMsg);
-
+      console.log(result)
       //处理result
-      var mapData = disposePersonLLResult(result,"map"),
-          barData = disposePersonLLResult(result,"bar");
-      if(errMsg != 200)
+
+      if(errCode != 200)
         return;
-      //设置option
-      //每次请求省的数据时，刷新地图
-      if(dataType == 'p')
-        curOption.series[0].data = mapData ;
 
+      //如果是省市区域则隐藏热地图
+      if(dataType == 'p' || dataType == 'c'){
+        curOption = curPersonOrigOpt;
+        //如果查看市的信息，则不改变地图信息（用省的地图）
+        mapData = dataType=="p"?disposePersonChartsResult(result,"map"):curPersonOrigOpt.series[0].data,
+        barData = disposePersonChartsResult(result,"bar");
+      }
+      else if(dataType == 'a' || dataType =='o' || dataType == 'f'){
+        curOption = curPersonHeatOpt;
+        mapData = disposePersonChartsResult(result.loc,"heatmap"),
+        barData = disposePersonChartsResult(result.area,"areabar");
+        console.log(barData);
+      }
+
+      //更新地图 || 热地图 ,图表信息
+      curOption.series[0].data = mapData ;
       curOption.series[1].data = barData ;
-      curOption.yAxis[0].data = getValues(mapData,"name");
-      curOption.legend.data = getValues(mapData,"name");
-
+      curOption.yAxis[0].data = getValues(barData,"name");
+      curOption.legend.data = getValues(barData,"name");
+      console.log("cur opt --->")
+      console.log(dataType);
+      console.log(barData);
+      console.log(curOption)
       //保存配置
       //用personChartOption_ + dataType 字符串表示客群来源数据
       localStorage["personChartOption_" + dataType] = JSON.stringify(curOption);
       //清除加载本地数据的计时器
 
-      buildPersonOrgHtml($container);
+      buildPersonOrgHtml($container,curOption);
       clearTimeout(localTime)
     })
 
     //如果超时则读取本地数据，然后再加载地图
     function loadLocal(){
       if(localStorage["personChartOption_" + dataType]){
-        curPersonOrigOpt = $.parseJSON(localStorage["personChartOption_" + dataType]);
+        var curOption = $.parseJSON(localStorage["personChartOption_" + dataType]);
         console.log("personOrig 读取本地数据 >");
-        buildPersonOrgHtml($container);
+        buildPersonOrgHtml($container,curOption);
         clearTimeout(localTime);
       }
     }
@@ -776,17 +1077,27 @@
         monthNames: ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"],
         customRangeLabel: '自选时间段'
       }
-      },
+    },
       function(start, end, label){
         //选择日期后，触发更改person 图表方法
         var dataType = "p"
-        if($(".nav-pills li").eq(1).hasClass("active")) dataType = "c";
-        console.log(" run ")
-        createLLChart("#person-chart-continer",llUrlBuild(dataType),dataType);
+        if($(".nav-pills li").eq(1).hasClass("active"))
+          dataType = "c";
+        else if($(".nav-pills li").eq(2).hasClass("active"))
+          dataType = "a";
+        else if($(".nav-pills li").eq(3).hasClass("active"))
+          dataType = "o";
+        else if($(".nav-pills li").eq(4).hasClass("active"))
+          dataType = "f";
 
+        createPersonChart("#person-chart-continer",llUrlBuild(dataType),dataType);
       });
     })
-
+    $("#myTab").click(function(){
+      personChart.clear();
+      console.log("show >")
+      console.log(personChart.getOption());
+    })
     $(".tab-self >li").click(function(){
       var i = $(this).index();
       if($(this).hasClass('active')) return ;
@@ -800,7 +1111,6 @@
       if(i == 3){
         if(!$(".nav-pills li").hasClass('active'))
           $(".nav-pills li").eq(0).trigger("click");
-
       }else{
         loadChartClass(i);
       }
@@ -818,7 +1128,14 @@
         dataType = "p"
       else if(index == 1)
         dataType = "c"
-      createLLChart("#person-chart-continer",llUrlBuild(dataType),dataType);
+      else if(index ==2)
+        dataType = "a"
+      else if(index ==3)
+        dataType = "o"
+      else if(index ==4)
+        dataType = "f"
+
+      createPersonChart("#person-chart-continer",llUrlBuild(dataType),dataType);
     })
   }
 
@@ -842,7 +1159,7 @@
         success();
       }
       //等待循环次数，如果超出，则取本地数据
-      if(count == 20 && localStorage.allChartsOption){
+      if(count >= 20 && localStorage.allChartsOption){
         allChartsOption = $.parseJSON(localStorage.allChartsOption);
         success();
       }
@@ -874,6 +1191,17 @@
     }else if(type == "c"){
       dataType = '3',
       areaType = '2';
+    }else if(type == "a"){
+      //居住区域
+      dataType = '1';
+      areaType = '1';
+    }else if(type == "o"){
+      //办公区域
+      dataType = '1';
+      areaType = '0';
+    }else if(type == "f"){
+      dataType = '1';
+      areaType = '3'
     }
 
     return urlMod.replace("{{mac}}",mac)
