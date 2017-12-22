@@ -34,8 +34,8 @@
         trigger: 'item'
       },
       bmap: {
-        center: [104.114129, 37.550339],
-        zoom: 5,
+        center: [116.407635,39.912917],
+        zoom: 10,
         roam: true,
         mapStyle: {
           styleJson: [
@@ -471,8 +471,8 @@
                 },
     }],
     bmap:{
-      center: [],
-      zoom: 1,
+      center: [116.407635,39.912917],
+      zoom: 5,
       roam: true,
       mapStyle:{
         styleJson: [{
@@ -625,7 +625,7 @@
       show: false,
       top: 'top',
       min: 0,
-      max: 10,
+      max: 20,
       seriesIndex: 0,
       calculable: true,
       inRange: {
@@ -637,8 +637,8 @@
       type:'heatmap',
       coordinateSystem: 'bmap',
       data: [],
-      pointSize: 3,
-      blurSize: 3
+      pointSize: 5,
+      blurSize: 1
     },
     {
         name: '省级',
@@ -714,6 +714,32 @@
     return list;
   }
 
+  //显示modal
+  function showModal(){
+    $("#myModal").modal("show");
+  }
+
+  //获取当前active nav 对应的搜索类型
+  function getActiveType(){
+    var dataType='p';
+    if($(".nav-pills li").eq(1).hasClass("active"))
+      dataType = "c";
+    else if($(".nav-pills li").eq(2).hasClass("active"))
+      dataType = "a";
+    else if($(".nav-pills li").eq(3).hasClass("active"))
+      dataType = "o";
+    else if($(".nav-pills li").eq(4).hasClass("active"))
+      dataType = "f";
+
+    return dataType;
+  }
+
+  //刷新图表
+  function refreshChart(){
+    dataType = getActiveType();
+    createPersonChart("#person-chart",llUrlBuild(dataType),dataType);
+  }
+
   //整理 获取的applist json
   //chartTypeList[0]chart 对应的数据放在chartDataList[0]
   function disposeAppJsonDataResult(json){
@@ -775,46 +801,46 @@
   //处理人群经纬度信息
   function disposePersonChartsResult(json,type){
     //bar 与map 图表类型的配置
-    var data = {
-      map:{"itemStyle":{
-            "normal":{
-                "color":"white",
-                "label":{
-                    "show": true,
-                    "textStyle": {
-                        "color": "white",
-                        "fontSize": 12
-                    }
-                }
-            }
-        }},
-      bar:{"itemStyle": {
-            "normal": {
-                "color": "white",
-                "label": {
-                    "show": false,
-                    "textStyle": {
-                        "color": "white",
-                        "fontSize": 12
-                    }
-                }
-            },
-        },
-      },
-      areabar:{"itemStyle": {
-        "normal": {
-          "color": "white",
-          "label": {
-              "show": false,
-              "textStyle": {
-                  "color": "white",
-                  "fontSize": 12
+      var data = {
+        map:{"itemStyle":{
+              "normal":{
+                  "color":"white",
+                  "label":{
+                      "show": true,
+                      "textStyle": {
+                          "color": "white",
+                          "fontSize": 12
+                      }
+                  }
               }
-            }
+          }},
+        bar:{"itemStyle": {
+              "normal": {
+                  "color": "white",
+                  "label": {
+                      "show": false,
+                      "textStyle": {
+                          "color": "white",
+                          "fontSize": 12
+                      }
+                  }
+              },
           },
+        },
+        areabar:{"itemStyle": {
+          "normal": {
+            "color": "white",
+            "label": {
+                "show": false,
+                "textStyle": {
+                    "color": "white",
+                    "fontSize": 12
+                }
+              }
+            },
+        }
       }
-    }
-  }
+  };
     var json = eval(json),
         r = [];
 
@@ -853,12 +879,11 @@
     $.getJSON(url,function(d){
 
       d = eval(d);
-      var textStyle,title,datas,lineDom,chartDom,mychart
+      var textStyle,title,datas,lineDom,chartDom,mychart,curOption,
           success = d.data.success,
           errCode = d.data.errCode,
           errMsg = d.data.errMsg,
-          result = d.data.result,
-          curOption;
+          result = d.data.result;
 
       //count 用于计算图表的个数，判断是否换行
       console.log(`createCircleCharts type[${type}] --->`)
@@ -912,30 +937,30 @@
       infoLoadedCount++ ;
       //加载完成后，在本地存储一份
       if(infoLoadedCount == 2)
-        console.log("local save !")
         localStorage.allChartsOption = JSON.stringify(allChartsOption);
     })
   }
 
   //使用curPersonOption 构建客群信息chart
   function buildPersonOrgHtml($container,opt){
-    //查找经纬度 chartDom
-    var chartDom = $("#person-chart").get(0);
+    var $chart = $("<div id='personLL' style='width:100%;height:100%;'></div>"),
+        chartDom = $chart.get(0);
 
     //清空容器是为了清除热地图
     $container.html(" ");
-    console.log($container)
     opt = opt || curPersonOrigOpt;
 
-    if(chartDom.length == 0) chartDom = $("<div id='personLL' style='width:100%;height:100%;'></div>").get(0);
-    chartDom.innerHtml = "";
-    $container.append(chartDom);
-
-    if(!personChart) personChart = echarts.init(chartDom);
-    personChart.setOption(opt,true);
+    $container.append($chart);
+    personChart = echarts.init(chartDom);
+    personChart.setOption(opt);
+    // personChart.setOption(opt,true);
     //关闭加载动画
     $(".inner-animate-box").fadeOut(300);
-
+    //清除百度LOGO
+    var clear = setTimeout(function(){
+      $("div.BMap_cpyCtrl.BMap_noprint.anchorBL").remove();
+      $("div.anchorBL").remove();
+    },500)
   }
 
   //使用optionlist 在页面上构建chart
@@ -949,7 +974,7 @@
           chart = null;
 
       if(i%oneLineChartLimit == 0){
-        if(!$line) $line = $(rowHtml);
+        if(!$line) $line = $(rowHtml.replace("{{line}}",parseInt(i/oneLineChartLimit));
         $line = $(rowHtml.replace("{{line}}",parseInt(i/oneLineChartLimit)))
         $container.append($line);
       }
@@ -959,7 +984,6 @@
       chart.setOption(optionList[i]);
     }
     //完成循环后添加最后一行
-
     $container.append($line);
   }
 
@@ -1000,7 +1024,6 @@
         curOption = curPersonHeatOpt;
         mapData = disposePersonChartsResult(result.loc,"heatmap"),
         barData = disposePersonChartsResult(result.area,"areabar");
-        console.log(barData);
       }
 
       //更新地图 || 热地图 ,图表信息
@@ -1008,6 +1031,7 @@
       curOption.series[1].data = barData ;
       curOption.yAxis[0].data = getValues(barData,"name");
       curOption.legend.data = getValues(barData,"name");
+
       console.log("cur opt --->")
       console.log(dataType);
       console.log(barData);
@@ -1015,9 +1039,9 @@
       //保存配置
       //用personChartOption_ + dataType 字符串表示客群来源数据
       localStorage["personChartOption_" + dataType] = JSON.stringify(curOption);
-      //清除加载本地数据的计时器
-
       buildPersonOrgHtml($container,curOption);
+
+      //清除加载本地数据的计时器
       clearTimeout(localTime)
     })
 
@@ -1041,7 +1065,6 @@
         optionList = [];
 
     for(var i=0;i<cls.charts.length;i++){
-      console.log(cls.charts[i])
       var curOption = allChartsOption[cls.charts[i]];
       optionList.push(curOption);
     }
@@ -1080,24 +1103,13 @@
     },
       function(start, end, label){
         //选择日期后，触发更改person 图表方法
-        var dataType = "p"
-        if($(".nav-pills li").eq(1).hasClass("active"))
-          dataType = "c";
-        else if($(".nav-pills li").eq(2).hasClass("active"))
-          dataType = "a";
-        else if($(".nav-pills li").eq(3).hasClass("active"))
-          dataType = "o";
-        else if($(".nav-pills li").eq(4).hasClass("active"))
-          dataType = "f";
+        refreshChart();
+    })
 
-        createPersonChart("#person-chart-continer",llUrlBuild(dataType),dataType);
-      });
+    $("#myTab").dblclick(function(){
+        //for test
     })
-    $("#myTab").click(function(){
-      personChart.clear();
-      console.log("show >")
-      console.log(personChart.getOption());
-    })
+
     $(".tab-self >li").click(function(){
       var i = $(this).index();
       if($(this).hasClass('active')) return ;
@@ -1121,23 +1133,35 @@
     $(".nav-pills li").click(function(){
       var index = $(this).index(),
           dataType = "";
+
       if($(this).hasClass('active')) return ;
+      //showmodal的nav
+      if(index ==5){
+        showModal();
+        return;
+      }
+
       $(".nav-pills li").removeClass('active');
       $(this).addClass('active');
-      if(index == 0)
-        dataType = "p"
-      else if(index == 1)
-        dataType = "c"
-      else if(index ==2)
-        dataType = "a"
-      else if(index ==3)
-        dataType = "o"
-      else if(index ==4)
-        dataType = "f"
 
-      createPersonChart("#person-chart-continer",llUrlBuild(dataType),dataType);
+      dataType = getActiveType();
+      createPersonChart("#person-chart",llUrlBuild(dataType),dataType);
     })
-  }
+
+    //modal 的确定按钮，触发刷新
+    $("#sure-btn").click(function(){
+      if($(".enable-filter-group >label.active").index(".enable-filter-group >label.btn-primary") == 0)
+        refreshChart();
+    })
+
+
+    //清除所有 active （enable 选择禁用 btn)
+    $("#filter-reset").click(function(){
+      $(".btn-group >label.btn-primary").removeClass("active");
+      $(".enable-filter-group >label.btn-primary").eq(1).addClass("active");
+    })
+  })
+}
 
   //用于检测数据加载状态，关闭加载动画
   //触发第一次菜单点击
@@ -1148,12 +1172,14 @@
           $('.cloth').remove();
           $("#myTab li").eq(0).trigger('click');
           clearInterval(interv);
+          console.log("success")
       })
     }
 
     return function(){
-      console.log("load..." + infoLoadedCount)
+      console.log("infoCount..." + infoLoadedCount)
       console.log(count);
+
       count ++ ;
       if(infoLoadedCount == 2){
         success();
@@ -1169,6 +1195,7 @@
 
   //构建客群信息请求的URL
   function llUrlBuild(type){
+    console.log(type)
     var type = type || "p",
         urlMod = remoteUrlList['ll'],
         mac = "e4:95:6e:4f:e9:95",
@@ -1177,9 +1204,16 @@
         dataType = '',
         areaType = '',
         dateRangeV = $("#daterange").val().split(" - ");
-      console.log("daterange -v")
-      console.log(dateRangeV);
 
+    //扩展的查询字符串
+    var sexQeury = "",
+        ageQeury = "",
+        incomeQeury = "",
+        eduQuery = "",
+        hadChildQuery = "",
+        queryList = [] ;
+
+    //时间范围
     if(dateRangeV.length == 2){
       dateStart = dateRangeV[0];
       dateEnd = dateRangeV[1];
@@ -1204,6 +1238,95 @@
       areaType = '3'
     }
 
+    //查询参数
+    //只有启用为active 才启用
+    if($(".enable-filter-group >label.active").index(".enable-filter-group >label.btn-primary") == 0){
+
+      //查看当前选中的active 的index
+      var sexi = $(".sex-group > label.active").index(".sex-group >label.btn-primary") ,
+          agei = $(".age-group > label.active").index(".age-group >label.btn-primary"),
+          incomei = $(".income-group > label.active").index(".income-group >label.btn-primary") ,
+          edui = $(".edu-group > label.active").index(".edu-group >label.btn-primary"),
+          hadChildi = $(".had-child-group > label.active").index(".had-child-group >label.btn-primary");
+
+      //性别筛选
+      if(sexi != -1){
+        sexQeury = "gender=";
+
+        if(sexi == 0)
+          sexQeury += "0";
+        else if(sexi == 1)
+          sexQeury += "1";
+        queryList.push(sexQeury);
+      }
+
+      //年龄筛选
+      if(agei != -1){
+        ageQeury = "agebin="
+
+        if(agei ==0)
+          ageQeury += "9";
+        else if(agei ==1)
+          ageQeury += "8";
+        else if(agei ==2)
+          ageQeury += "7";
+        else if(agei == 3)
+          ageQeury += "6";
+        else if(agei == 4)
+          ageQeury += "5";
+        queryList.push(ageQeury);
+      }
+
+      //收入筛选
+      if(incomei != -1){
+        incomeQeury = "income="
+
+        if(incomei ==0)
+          incomeQeury += "2";
+        else if(incomei ==1)
+          incomeQeury += "1";
+        else if(incomei ==2)
+          incomeQeury += "0";
+        queryList.push(incomeQeury);
+      }
+
+      //文化程度筛选
+      if(edui != -1){
+        eduQuery = "edu=";
+
+        if(edui ==0)
+          eduQuery += "0";
+        else if(edui == 1)
+          eduQuery += "1";
+        else if(edui == 2)
+          eduQuery += "2";
+        else if(edui == 3)
+          eduQuery += "3";
+        else if(edui == 4)
+          eduQuery += "4";
+        else if(edui == 5)
+          eduQuery += "5";
+        queryList.push(eduQuery);
+      }
+
+      //有无小孩筛选
+      if(hadChildi != -1){
+        hadChildQuery = "kids=";
+
+        if(hadChildi == 0)
+          hadChildQuery += "1";
+        else if(hadChildi ==1)
+          hadChildQuery += "0";
+        queryList.push(hadChildQuery);
+      }
+    }
+
+    //如果有扩展查询，则添加到url上
+    if(queryList.length > 0)
+      urlMod = urlMod + "?" + queryList.join("&");
+
+    console.log(" tmp urlMod")
+    console.log(urlMod);
     return urlMod.replace("{{mac}}",mac)
                  .replace("{{dataType}}",dataType)
                  .replace("{{areaType}}",areaType)
@@ -1217,7 +1340,6 @@
     requestCircleCharts("box");
     eventRegister();
   }
-
   init();
 // createLLChart("#person-map-box");
 })()
